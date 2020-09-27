@@ -39,7 +39,7 @@
     - name: "KVM host only: Get distro and network devices to validate guest configs"
       setup:
         gather_subset:
-          - '!all'
+          - "!all"
           - min
           - network
       register: result_setup
@@ -102,7 +102,7 @@
 #      changed_when: true
 
     - name: "KVM host only: Test for required programs"
-      shell: 'hash {{ item }} 2>/dev/null'
+      shell: "hash {{ item }} 2>/dev/null"
       become: true
       register: result_deps
       with_items: "{{ virt_infra_host_deps }}"
@@ -237,7 +237,7 @@
     - name: "KVM host only: Enable access to NVMe drives in apparmor"
       lineinfile:
         path: /etc/apparmor.d/abstractions/libvirt-qemu
-        line: '  /var/lib/libvirt/images/*nvme.qcow2 rwk,'
+        line: "  /var/lib/libvirt/images/*nvme.qcow2 rwk,"
       register: result_apparmor_conf
       when:
         - inventory_hostname in groups['kvmhost']
@@ -316,7 +316,7 @@
       template:
         src: templates/vbmcd.service.j2
         dest: "/etc/systemd/system/vbmcd.service"
-        mode: '0644'
+        mode: "0644"
       become: true
       register: result_vbmc_service
       ignore_errors: yes
@@ -337,7 +337,7 @@
       file:
         path: /etc/virtualbmc
         state: directory
-        mode: '0755'
+        mode: "0755"
       become: true
       ignore_errors: yes
       when:
@@ -348,7 +348,7 @@
       file:
         path: /var/lib/vbmcd
         state: directory
-        mode: '0755'
+        mode: "0755"
       become: true
       ignore_errors: yes
       when:
@@ -359,7 +359,7 @@
       template:
         src: templates/virtualbmc.conf.j2
         dest: "/etc/virtualbmc/virtualbmc.conf"
-        mode: '0644'
+        mode: "0644"
       ignore_errors: yes
       become: true
       when:
@@ -454,9 +454,9 @@
     - name: "Guests: Check that distro disk image exists on KVM host"
       set_fact:
         validations_failed: "{{ validations_failed|default([]) + \
-        [ hostvars[groups['kvmhost'][0]].virt_infra_host_image_path | default(virt_infra_host_image_path) + '/' + \
-        virt_infra_distro_image + ' missing.{% if virt_infra_distro_image_url is defined and virt_infra_distro_image_url %} \
-        Download from {{ virt_infra_distro_image_url }}{% endif %}'] }}"
+          [ hostvars[groups['kvmhost'][0]].virt_infra_host_image_path | default(virt_infra_host_image_path) + '/' + \
+          virt_infra_distro_image + ' missing.{% if virt_infra_distro_image_url is defined and virt_infra_distro_image_url %} \
+          Download from {{ virt_infra_distro_image_url }}{% endif %}'] }}"
       when:
         - inventory_hostname not in groups['kvmhost']
         - not result_base_image.stat.exists
