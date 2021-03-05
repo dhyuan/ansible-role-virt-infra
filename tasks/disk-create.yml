@@ -124,6 +124,51 @@
   become: true
   delegate_to: "{{ groups['kvmhost'][0] }}"
 
+- name: Do not use cloud source
+  command: >
+    virt-customize
+    -a {{ hostvars[groups['kvmhost'][0]].virt_infra_host_image_path | default(virt_infra_host_image_path) }}/{{ inventory_hostname }}-boot.qcow2
+    --run-command 'echo "apt_preserve_sources_list: true" >> /etc/cloud/cloud.cfg'
+  register: result_disk_cmd
+  retries: 2
+  delay: 2
+  until: result_disk_cmd is succeeded
+  become: true
+  when:
+    - inventory_hostname not in groups['kvmhost']
+    - inventory_hostname not in hostvars[groups['kvmhost'][0]].result_all_vms.list_vms
+    - virt_infra_state != "undefined"
+    - change_to_ali_ubuntu_source is defined and change_to_ali_ubuntu_source
+  delegate_to: "{{ groups['kvmhost'][0] }}"
+
+
+- name: Setup Aliyun Source
+  command: >
+    virt-customize
+    -a {{ hostvars[groups['kvmhost'][0]].virt_infra_host_image_path | default(virt_infra_host_image_path) }}/{{ inventory_hostname }}-boot.qcow2
+    --run-command 'mv /etc/apt/sources.list /etc/apt/sources.list.bak'
+    --run-command 'echo "deb http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs) main multiverse restricted universe" >> /etc/apt/sources.list'
+    --run-command 'echo "deb http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs)-backports main multiverse restricted universe" >> /etc/apt/sources.list'
+    --run-command 'echo "deb http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs)-proposed main multiverse restricted universe" >> /etc/apt/sources.list'
+    --run-command 'echo "deb http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs)-security main multiverse restricted universe" >> /etc/apt/sources.list'
+    --run-command 'echo "deb http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs)-updates main multiverse restricted universe" >> /etc/apt/sources.list'
+    --run-command 'echo "deb-src http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs) main multiverse restricted universe" >> /etc/apt/sources.list'
+    --run-command 'echo "deb-src http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs)-backports main multiverse restricted universe" >> /etc/apt/sources.list'
+    --run-command 'echo "deb-src http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs)-proposed main multiverse restricted universe" >> /etc/apt/sources.list'
+    --run-command 'echo "deb-src http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs)-security main multiverse restricted universe" >> /etc/apt/sources.list'
+    --run-command 'echo "deb-src http://mirrors.aliyun.com/ubuntu/ $(lsb_release -cs)-updates main multiverse restricted universe" >> /etc/apt/sources.list'
+  register: result_disk_cmd
+  retries: 2
+  delay: 2
+  until: result_disk_cmd is succeeded
+  become: true
+  when:
+    - inventory_hostname not in groups['kvmhost']
+    - inventory_hostname not in hostvars[groups['kvmhost'][0]].result_all_vms.list_vms
+    - virt_infra_state != "undefined"
+    - change_to_ali_ubuntu_source is defined and change_to_ali_ubuntu_source
+  delegate_to: "{{ groups['kvmhost'][0] }}"
+
 - name: Run custom shell commands in guest disk
   command: >
     virt-customize
@@ -157,7 +202,7 @@
     {% endif %}
     --install qemu-guest-agent,cloud-init
   register: result_disk_deps
-  retries: 10
+  retries: 3
   delay: 2
   until: result_disk_deps is succeeded
   become: true
